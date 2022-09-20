@@ -1,9 +1,11 @@
 mod commands;
 mod constant;
 mod error;
+mod model;
+pub mod utils;
 
-use clap::{Args, Parser, Subcommand};
-use commands::init::init;
+use clap::{Parser, Subcommand};
+use commands::{add, init};
 
 /// A fictional versioning CLI
 #[derive(Debug, Parser)] // requires `derive` feature
@@ -22,12 +24,18 @@ enum Commands {
         /// The remote to clone
         remote: String,
     },
+    #[clap(arg_required_else_help = true)]
+    Add {
+        /// The remote to clone
+        paths: Vec<String>,
+    },
 }
 
 fn main() {
     let result = match Cli::parse().command {
         Commands::Clone { remote: _ } => Ok(()),
         Commands::Init => init(),
+        Commands::Add { paths } => add(paths),
     };
     match result {
         Ok(_) => {}

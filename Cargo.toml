@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 clap = { version = "3.2.22", features = ["derive", "cargo"] }
 thiserror = "1"
+ring = "0.16.20"
+data-encoding = "2.3.2"
+flate2 = "1.0.24"

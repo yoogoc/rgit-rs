@@ -4,11 +4,11 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::constant::*;
-use crate::error::InitError;
+use crate::error::Error;
 
-pub fn init() -> Result<(), InitError> {
+pub fn init() -> Result<(), Error> {
     if Path::new(RGIT_DIRECTORY).is_dir() {
-        return Err(InitError::DirExists());
+        return Err(Error::DirExists);
     }
 
     build_rgit_directory();
