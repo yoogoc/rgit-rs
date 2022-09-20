@@ -4,10 +4,11 @@ mod error;
 mod model;
 pub mod utils;
 
+use std::process::exit;
+
 use clap::{Parser, Subcommand};
 use commands::{add, init};
 
-/// A fictional versioning CLI
 #[derive(Debug, Parser)] // requires `derive` feature
 #[clap(name = "rgit")]
 #[clap(about = "rgit", long_about = None)]
@@ -26,7 +27,7 @@ enum Commands {
     },
     #[clap(arg_required_else_help = true)]
     Add {
-        /// The remote to clone
+        /// pathsepc
         paths: Vec<String>,
     },
 }
@@ -40,7 +41,8 @@ fn main() {
     match result {
         Ok(_) => {}
         Err(err) => {
-            panic!("{}", err)
+            eprintln!("{}", err.to_string());
+            exit(1);
         }
     }
 }
