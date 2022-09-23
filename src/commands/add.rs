@@ -70,7 +70,7 @@ fn get_file(path: &str) -> File {
 fn write_file(file: &File) -> Result<(), Error> {
     let obj_dir = format!("{}/{}", OBJECTS_DIRECTORY, &file.sha[0..2]);
     fs::create_dir_all(&obj_dir).unwrap();
-    let blob_path = format!("{}/{}", &obj_dir, &file.sha[3..]);
+    let blob_path = format!("{}/{}", &obj_dir, &file.sha[2..]);
 
     let mut blob_file = fs::File::create(&blob_path).unwrap();
     blob_file.write_all(&file.blob).unwrap();

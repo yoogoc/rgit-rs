@@ -1,5 +1,5 @@
 use std::fs::{self, create_dir_all, read_to_string, OpenOptions};
-use std::io::{Seek, SeekFrom, Write};
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 use time::format_description::well_known::Iso8601;
@@ -29,7 +29,7 @@ pub fn commit(message: Option<String>) -> Result<(), Error> {
 }
 
 fn build_tree(entries: Vec<index::Entry>) -> String {
-    let mut bt = BuildTree::new();
+    let bt = BuildTree::new();
     bt.build(entries)
 }
 
@@ -52,7 +52,7 @@ fn build_commit(tree_sha: &str, message: Option<String>) -> String {
     let sha = sha256_digest_hex(sha_name.as_bytes());
     let obj_dir = format!("{}/{}", OBJECTS_DIRECTORY, &sha[0..2]);
     fs::create_dir_all(&obj_dir).unwrap();
-    let obj_path = format!("{}/{}", obj_dir, &sha[3..]);
+    let obj_path = format!("{}/{}", obj_dir, &sha[2..]);
 
     let mut obj_file = fs::File::create(&obj_path).unwrap();
     writeln!(obj_file, "tree {}", tree_sha).unwrap();
@@ -71,8 +71,11 @@ fn update_refs(commit_sha: &str) {
 }
 
 fn clear_index() {
-    let mut idx_file = fs::File::open(INDEX_PATH).unwrap();
-    idx_file.seek(SeekFrom::End(0)).unwrap();
+    OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(INDEX_PATH)
+        .unwrap();
 }
 
 fn try_create_commit_message() {

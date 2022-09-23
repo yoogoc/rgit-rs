@@ -13,12 +13,14 @@ pub struct TreeEntry {
 
 #[derive(Debug)]
 pub struct Tree {
-    entries: Vec<TreeEntry>,
+    entries: RefCell<Vec<TreeEntry>>,
 }
 
 impl Tree {
     pub fn new() -> Self {
-        Tree { entries: vec![] }
+        Tree {
+            entries: RefCell::new(vec![]),
+        }
     }
 }
 
@@ -37,14 +39,15 @@ impl BuildTree {
         }
     }
 
-    pub fn build(&mut self, entries: Vec<index::Entry>) -> String {
+    pub fn build(&self, entries: Vec<index::Entry>) -> String {
         for entry in entries {
             self.commit_index_entry(entry)
         }
-        self.persist_recursive("", self.trees.clone().borrow_mut().get_mut("").unwrap())
+        println!("{:?}", self.trees);
+        self.persist_recursive("", self.trees.clone().borrow().get("").unwrap())
     }
 
-    fn commit_index_entry(&mut self, entry: index::Entry) {
+    fn commit_index_entry(&self, entry: index::Entry) {
         let mut fullpath = String::new();
 
         for path in entry.path.split("/") {
@@ -54,7 +57,7 @@ impl BuildTree {
         }
     }
 
-    fn do_build(&mut self, entry: &index::Entry, path: &Path) {
+    fn do_build(&self, entry: &index::Entry, path: &Path) {
         if self
             .trees
             .borrow()
@@ -65,7 +68,10 @@ impl BuildTree {
 
         let mut typ = Mode::Dir;
         let mut sha = String::new();
-        if entry.path.eq(&path.file_name().unwrap().to_str().unwrap()) {
+        if entry
+            .path
+            .ends_with(&path.file_name().unwrap().to_str().unwrap())
+        {
             typ = Mode::Blob;
             sha = String::from(&entry.sha);
         } else {
@@ -79,8 +85,7 @@ impl BuildTree {
             .borrow_mut()
             .get_mut(path.parent().unwrap().to_str().unwrap())
         {
-            let es = &mut tree.entries;
-            es.push(TreeEntry {
+            tree.entries.borrow_mut().push(TreeEntry {
                 typ,
                 path: String::from(path.file_name().unwrap().to_str().unwrap()),
                 sha: Some(sha),
@@ -88,8 +93,8 @@ impl BuildTree {
         }
     }
 
-    fn persist_recursive(&mut self, parent: &str, tree: &mut Tree) -> String {
-        for entry in &mut tree.entries {
+    fn persist_recursive(&self, parent: &str, tree: &Tree) -> String {
+        for entry in tree.entries.borrow_mut().as_mut_slice() {
             if entry.typ != Mode::Dir && entry.sha.is_some() {
                 continue;
             }
@@ -98,14 +103,12 @@ impl BuildTree {
                 .display()
                 .to_string();
 
-            println!("{}", Rc::strong_count(&self.trees));
-            let trees = self.trees.clone();
-
-            let sha = self.persist_recursive(&path, trees.borrow_mut().get_mut(&path).unwrap());
+            let sha =
+                self.persist_recursive(&path, self.trees.clone().borrow().get(&path).unwrap());
             entry.sha = Some(String::from(&sha));
         }
 
-        for entry in &tree.entries {
+        for entry in tree.entries.borrow().as_slice() {
             // #[cfg(debug)]
             // println!("{:?}", entry);
             writeln!(
@@ -122,7 +125,7 @@ impl BuildTree {
 
         let obj_dir = format!("{}/{}", OBJECTS_DIRECTORY, &sha[0..2]);
         fs::create_dir_all(&obj_dir).unwrap_or(());
-        let obj_path = format!("{}/{}", obj_dir, &sha[3..]);
+        let obj_path = format!("{}/{}", obj_dir, &sha[2..]);
 
         let mut obj_file = fs::File::create(&obj_path).unwrap();
         writeln!(
@@ -131,6 +134,7 @@ impl BuildTree {
             String::from_utf8(self.writer.borrow().to_vec()).unwrap()
         )
         .unwrap_or(());
+        self.writer.borrow_mut().clear();
 
         sha
     }
