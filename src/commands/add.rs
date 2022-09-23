@@ -80,7 +80,7 @@ fn write_file(file: &File) -> Result<(), Error> {
         .append(true)
         .open(INDEX_PATH)
         .unwrap();
-    if let Err(e) = writeln!(index_file, "{} {}", file.sha, file.path) {
+    if let Err(e) = writeln!(index_file, "{} blob {}", file.sha, file.path) {
         eprintln!("Couldn't write to file: {}", e);
     }
 

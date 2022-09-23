@@ -1,13 +1,16 @@
 mod commands;
 mod constant;
 mod error;
+mod file;
+mod index;
 mod model;
+mod tree;
 pub mod utils;
 
 use std::process::exit;
 
 use clap::{Parser, Subcommand};
-use commands::{add, init};
+use commands::{add, commit, init};
 
 #[derive(Debug, Parser)] // requires `derive` feature
 #[clap(name = "rgit")]
@@ -30,6 +33,11 @@ enum Commands {
         /// pathsepc
         paths: Vec<String>,
     },
+    Commit {
+        /// message
+        #[clap(short, long, value_parser)]
+        message: Option<String>,
+    },
 }
 
 fn main() {
@@ -37,6 +45,7 @@ fn main() {
         Commands::Clone { remote: _ } => Ok(()),
         Commands::Init => init(),
         Commands::Add { paths } => add(paths),
+        Commands::Commit { message } => commit(message),
     };
     match result {
         Ok(_) => {}
